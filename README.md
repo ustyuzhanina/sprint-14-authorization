@@ -1,9 +1,9 @@
-# **sprint-13-mesto-server-db**
+# **sprint-14-authorization**
 
-Version 0.1.1
+Version 0.0.1
 
 ## About project:
-This is a demo-project accomplished to learn basic principles of creating a REST API separate from frontend through the use of Node.js, Express routing and Mongo Database.
+This is a demo-project accomplished to learn basic principles of authorization through the use of Node.js, JWT, bcryptjs and cookies.
 
 <img src="./images/mesto-pic.jpg" alt="Mesto screenshot with numerous breathtaking pictures" width="600"/>
 

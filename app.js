@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const cards = require('./routes/cards.js');
 const users = require('./routes/users.js');
 const { login, createUser } = require('./controllers/users.js');
+const auth = require('./middlewares/auth');
 
 const { PORT = 3000 } = process.env;
 
@@ -23,19 +24,11 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
 app.use(bodyParser());
 app.use(cookieParser());
 
-app.use((req, res, next) => {
-  req.user = {
-    _id: '5f316fd9b970d6230ca50b00', // вставьте сюда _id созданного в предыдущем пункте пользователя
-  };
-
-  next();
-});
-
 // app.use(express.static(path.join(__dirname, 'public')));
 
-app.use('/cards', cards);
+app.use('/cards', auth, cards);
 
-app.use('/users', users);
+app.use('/users', auth, users);
 
 app.post('/signup', createUser);
 app.post('/signin', login);

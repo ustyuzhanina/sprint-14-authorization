@@ -28,15 +28,19 @@ module.exports.createCard = (req, res) => {
 };
 
 module.exports.deleteCard = (req, res) => {
-  Card.findByIdAndDelete(req.params.cardId)
+  Card.findById(req.params.cardId)
+    .orFail(() => { throw new Error(('Нет такой карточки')); })
+    .populate('owner', '_id')
     .then((card) => {
-      if (card) {
-        res.send({ data: card });
-      } else {
-        res.status(404).send({ message: 'Нет фотографии с таким id' });
+      if (card.owner.id.toString() !== req.user._id) {
+        throw new Error(('Запрещено'));
       }
+      card.remove();
+      return res.send({ data: card });
     })
-    .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
+    .catch(() => {
+      res.status(500).send({ message: 'На сервере произошла ошибка' });
+    });
 };
 
 module.exports.likeCard = (req, res) => {
