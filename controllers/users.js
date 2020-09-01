@@ -1,7 +1,40 @@
+const { AssertionError } = require('assert');
+const { MongoError } = require('mongodb');
+
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
+
+function errorHandler(error, req, res) {
+  if (error.name === 'DocumentNotFoundError') {
+    return res.status(404).json({ message: 'Документ не найден' });
+  }
+
+  if (error instanceof AssertionError) {
+    return res.status(400).json({
+      type: 'AssertionError',
+      message: error.message,
+    });
+  }
+
+  if (error instanceof MongoError) {
+    return res.status(503).json({
+      type: 'MongoError',
+      message: error.message,
+    });
+  }
+
+  if (error.name === 'ValidationError') {
+    return res.status(400).json({ message: error.message });
+  }
+
+  if (error.name === 'CastError') {
+    return res.status(400).json({ message: error.message });
+  }
+
+  return res.status(500).send({ message: 'На сервере произошла ужасная ошибка' });
+}
 
 module.exports.getUsers = (req, res) => {
   User.find({})
@@ -12,7 +45,7 @@ module.exports.getUsers = (req, res) => {
         res.status(400).send({ message: 'В базе данных еще нет ни одного пользователя' });
       }
     })
-    .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
+    .catch((err) => errorHandler(err, req, res));
 };
 
 module.exports.getUserById = (req, res) => {
@@ -24,9 +57,10 @@ module.exports.getUserById = (req, res) => {
         res.status(404).send({ message: 'Нет пользователя с таким id' });
       }
     })
-    .catch(() => res.status(500).send({ message: 'На сервере произошла ошибка' }));
+    .catch((err) => errorHandler(err, req, res));
 };
 
+// eslint-disable-next-line consistent-return
 module.exports.createUser = (req, res) => {
   const {
     name,
@@ -36,6 +70,10 @@ module.exports.createUser = (req, res) => {
     password,
   } = req.body;
 
+  if (!password || password.length < 8) {
+    return res.status(400).send({ message: 'Введите пароль. Минимальная длина пароля - 8 символов' });
+  }
+
   bcrypt.hash(password, 10)
     .then((hash) => User.create({
       name,
@@ -44,13 +82,18 @@ module.exports.createUser = (req, res) => {
       email,
       password: hash,
     }))
-    .then((user) => res.send({ data: user }))
+    .then((user) => res.send({
+      name: user.name,
+      about: user.about,
+      avatar: user.avatar,
+      email: user.email,
+    }))
     .catch((err) => {
-      if (err.name === 'ValidationError') {
-        res.status(400).send({ message: 'Ошибка валидации данных' });
-      } else {
-        res.status(500).send({ message: 'На сервере произошла ошибка' });
+      if (err.name === 'MongoError' && err.code === 11000) {
+        return res.status(409).send({ message: 'Пользователь с таким адресом электронной почты уже существует!' });
       }
+
+      return errorHandler(err, req, res);
     });
 };
 
@@ -75,13 +118,31 @@ module.exports.login = (req, res) => {
           );
 
           res.cookie('jwt', token, {
-            // maxAge: 3600000 * 24 * 7,
+            maxAge: 3600 * 24 * 7,
             httpOnly: true,
+            sameSite: true,
           });
-          res.send({ message: `Всё верно! Получи свой токен, юзер! - ${token}` });
+          res.send({ message: token });
         });
     })
     .catch(() => {
       res.status(401).send({ message: 'Неправильные почта или пароль' });
     });
+};
+
+module.exports.updateProfile = (req, res) => {
+  User.findByIdAndUpdate(req.user._id, {
+    name: req.body.name,
+    about: req.body.about,
+  })
+    .then((user) => res.send({ data: user }))
+    .catch((err) => errorHandler(err, req, res));
+};
+
+module.exports.updateAvatar = (req, res) => {
+  User.findByIdAndUpdate(req.user._id, {
+    avatar: req.body.avatar,
+  })
+    .then((user) => res.send({ data: user }))
+    .catch((err) => errorHandler(err, req, res));
 };

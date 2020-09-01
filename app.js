@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const cards = require('./routes/cards.js');
 const users = require('./routes/users.js');
 const { login, createUser } = require('./controllers/users.js');
+
 const auth = require('./middlewares/auth');
 
 const { PORT = 3000 } = process.env;
@@ -24,12 +25,8 @@ mongoose.connect('mongodb://localhost:27017/mestodb', {
 app.use(bodyParser());
 app.use(cookieParser());
 
-// app.use(express.static(path.join(__dirname, 'public')));
-
 app.use('/cards', auth, cards);
-
 app.use('/users', auth, users);
-
 app.post('/signup', createUser);
 app.post('/signin', login);
 
@@ -38,4 +35,7 @@ app.use((req, res) => {
   res.send({ message: 'Запрашиваемый ресурс не найден' });
 });
 
-app.listen(PORT);
+app.listen(PORT, () => {
+  // eslint-disable-next-line no-console
+  console.log(`App listening at http://localhost:${PORT}`);
+});
