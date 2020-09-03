@@ -1,40 +1,8 @@
-const { AssertionError } = require('assert');
-const { MongoError } = require('mongodb');
-
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const User = require('../models/user');
-
-function errorHandler(error, req, res) {
-  if (error.name === 'DocumentNotFoundError') {
-    return res.status(404).json({ message: 'Документ не найден' });
-  }
-
-  if (error instanceof AssertionError) {
-    return res.status(400).json({
-      type: 'AssertionError',
-      message: error.message,
-    });
-  }
-
-  if (error instanceof MongoError) {
-    return res.status(503).json({
-      type: 'MongoError',
-      message: error.message,
-    });
-  }
-
-  if (error.name === 'ValidationError') {
-    return res.status(400).json({ message: error.message });
-  }
-
-  if (error.name === 'CastError') {
-    return res.status(400).json({ message: error.message });
-  }
-
-  return res.status(500).send({ message: 'На сервере произошла ужасная ошибка' });
-}
+const { errorHandler } = require('../modules/errorHandler');
 
 module.exports.getUsers = (req, res) => {
   User.find({})
@@ -42,7 +10,7 @@ module.exports.getUsers = (req, res) => {
       if (users.length) {
         res.send(users);
       } else {
-        res.status(400).send({ message: 'В базе данных еще нет ни одного пользователя' });
+        res.status(200).send({ message: 'В базе данных еще нет ни одного пользователя' });
       }
     })
     .catch((err) => errorHandler(err, req, res));
@@ -134,6 +102,10 @@ module.exports.updateProfile = (req, res) => {
   User.findByIdAndUpdate(req.user._id, {
     name: req.body.name,
     about: req.body.about,
+  }, {
+    new: true,
+    runValidators: true,
+    upsert: false,
   })
     .then((user) => res.send({ data: user }))
     .catch((err) => errorHandler(err, req, res));
@@ -142,6 +114,10 @@ module.exports.updateProfile = (req, res) => {
 module.exports.updateAvatar = (req, res) => {
   User.findByIdAndUpdate(req.user._id, {
     avatar: req.body.avatar,
+  }, {
+    new: true,
+    runValidators: true,
+    upsert: false,
   })
     .then((user) => res.send({ data: user }))
     .catch((err) => errorHandler(err, req, res));
