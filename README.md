@@ -1,6 +1,6 @@
 # **sprint-14-authorization**
 
-Version 0.0.1
+Version 0.0.3
 
 ## About project:
 This is a demo-project accomplished to learn basic principles of authorization through the use of Node.js, JWT, bcryptjs and cookies.
