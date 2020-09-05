@@ -10,7 +10,7 @@ module.exports.getUsers = (req, res) => {
       if (users.length) {
         res.send(users);
       } else {
-        res.status(200).send({ message: 'В базе данных еще нет ни одного пользователя' });
+        res.status(404).send({ message: 'В базе данных еще нет ни одного пользователя' });
       }
     })
     .catch((err) => errorHandler(err, req, res));

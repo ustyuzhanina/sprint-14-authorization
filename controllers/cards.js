@@ -7,7 +7,7 @@ module.exports.getCards = (req, res) => {
       if (cards.length) {
         res.send(cards);
       } else {
-        res.status(200).send({ message: 'В базе данных еще нет ни одной фотографии' });
+        res.status(404).send({ message: 'В базе данных еще нет ни одной фотографии' });
       }
     })
     .catch((err) => errorHandler(err, req, res));
